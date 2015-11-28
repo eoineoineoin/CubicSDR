@@ -422,6 +422,16 @@ void DemodulatorInstance::setMuted(bool muted) {
     demodulatorThread->setMuted(muted);
 }
 
+bool DemodulatorInstance::isRecording() {
+    return demodulatorThread->isRecording();
+}
+
+void DemodulatorInstance::setRecording(bool recording) {
+    //todo.eoin do we need a local cache of this?
+    demodulatorThread->setRecording(recording);
+}
+
+
 DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {
     return pipeIQInputData;
 }

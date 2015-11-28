@@ -29,6 +29,9 @@ public:
 
     void setMuted(bool state);
     bool isMuted();
+
+    void setRecording(bool state);
+    bool isRecording();
     
     float getSignalLevel();
     void setSquelchLevel(float signal_level_in);
@@ -68,6 +71,7 @@ protected:
 
     std::atomic_bool stereo;
     std::atomic_bool muted;
+    std::atomic_bool recording;
     std::atomic_bool agcEnabled;
     std::atomic_int demodulatorType;
     int audioSampleRate;

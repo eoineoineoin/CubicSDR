@@ -122,12 +122,22 @@ AppFrame::AppFrame() :
     demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
-	demodMuteButton->setSelection(-1);
+    demodMuteButton->setSelection(-1);
           
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
+    recordButton = new ModeSelectorCanvas(this, attribList);
+    recordButton->addChoice(1, "R");
+    recordButton->setPadding(-1,-1);
+    recordButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
+    recordButton->setHelpTip("Demodulator Recording Toggle");
+    recordButton->setToggleMode(true);
+    recordButton->setSelection(-1);
+
+    demodGainTray->Add(recordButton, 1, wxEXPAND | wxALL, 0);
+
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
-            
+
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
 
@@ -688,6 +698,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             int dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
+            recordButton->setSelection(demod->isRecording()?1:-1);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -735,6 +746,25 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 } else if (!demod->isMuted() && muteMode == 1) {
                     demodMuteButton->setSelection(-1);
                     wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                }
+            }
+
+            int recordMode = recordButton->getSelection();
+            if(recordButton->modeChanged()) {
+                if (demod->isRecording() && recordMode == -1) {
+                    demod->setRecording(false);
+                } else if (!demod->isRecording() && recordMode == 1) {
+                    demod->setRecording(true);
+                }
+                wxGetApp().getDemodMgr().setLastRecording(demod->isRecording());
+                recordButton->clearModeChanged();
+            } else {
+                if (demod->isRecording() && recordMode == -1) {
+                    recordButton->setSelection(1);
+                    wxGetApp().getDemodMgr().setLastRecording(demod->isRecording());
+                } else if (!demod->isMuted() && muteMode == 1) {
+                    recordButton->setSelection(-1);
+                    wxGetApp().getDemodMgr().setLastRecording(demod->isRecording());
                 }
             }
 

@@ -77,6 +77,9 @@ public:
     bool isMuted();
     void setMuted(bool muted);
 
+    bool isRecording();
+    void setRecording(bool recording);
+
     DemodulatorThreadInputQueue *getIQInputDataPipe();
 
 protected:

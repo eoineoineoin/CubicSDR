@@ -82,6 +82,7 @@ private:
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
     ModeSelectorCanvas *demodMuteButton;
+	ModeSelectorCanvas *recordButton;
 
     DemodulatorInstance *activeDemodulator;
 

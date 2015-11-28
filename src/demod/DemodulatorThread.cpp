@@ -13,10 +13,11 @@
 
 DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
-	stereo.store(false);
+    stereo.store(false);
     muted.store(false);
-	agcEnabled.store(false);
-	demodulatorType.store(DEMOD_TYPE_FM);
+    recording.store(false);
+    agcEnabled.store(false);
+    demodulatorType.store(DEMOD_TYPE_FM);
 
     demodFM = freqdem_create(0.5);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
@@ -525,6 +526,14 @@ bool DemodulatorThread::isMuted() {
 
 void DemodulatorThread::setMuted(bool muted) {
     this->muted.store(muted);
+}
+
+bool DemodulatorThread::isRecording() {
+    return recording.load();
+}
+
+void DemodulatorThread::setRecording(bool recording) {
+    this->recording.store(recording);
 }
 
 void DemodulatorThread::setAGC(bool state) {
