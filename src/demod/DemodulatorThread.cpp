@@ -11,6 +11,85 @@
 #include <pthread.h>
 #endif
 
+       #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+       #include <unistd.h>
+
+struct wavFileWriter
+{
+    int m_fd;
+
+    wavFileWriter(int sampleRate, int numChannels)
+    {
+        int numSamples = 0;
+
+        char filenameBuf[1024];
+        std::time_t time = std::time(nullptr);
+        const std::tm* now = std::localtime(&time);
+        sprintf(filenameBuf, "cubic-%i%i%i-%i%i%i.wav", now->tm_year, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+        m_fd = open(filenameBuf, O_WRONLY | O_CREAT, 0664);
+
+        write(m_fd, "RIFF", 4);
+
+        // This _should_ contain the number of samples. Seems to work if it's zero.
+        int zero = 0;
+        write(m_fd, &zero, 4);
+
+        write(m_fd, "WAVE", 4);
+        write(m_fd, "fmt ", 4);
+
+        int bytesPerSample = 2;
+
+        fmt_ck header;
+        header.m_subChunkSize = 16;
+        header.m_formatTag = 1;
+        header.m_numChannels = numChannels;
+        header.m_samplesPerSec = sampleRate;
+        header.m_averageBytesPerSec = sampleRate * numChannels * bytesPerSample;
+        header.m_blockAlign = numChannels * bytesPerSample;
+        header.m_bitsPerSample = bytesPerSample * 8;
+        write(m_fd, &header, sizeof(header));
+
+        write(m_fd, "data", 4);
+
+        //This should be the size of the data, if it's zero, it seems to play OK
+        int dataSize = 0;
+        write(m_fd, &dataSize, 4);
+    }
+
+    ~wavFileWriter()
+    {
+        close(m_fd);
+    }
+
+    void newData(const std::vector<float>& data)
+    {
+        std::vector<short> buf;
+        buf.reserve(data.size());
+        for(auto d : data)
+        {
+            short pcmData = (short)(d * 0x7fff);
+            buf.push_back(pcmData);
+        }
+        write(m_fd, &buf.front(), sizeof(short) * buf.size());
+    }
+
+
+    struct fmt_ck
+    {
+        int m_subChunkSize;
+        short m_formatTag;
+        short m_numChannels;
+        int m_samplesPerSec;
+        int m_averageBytesPerSec;
+        short m_blockAlign;
+        short m_bitsPerSample;
+    };
+
+};
+
+
 DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
     stereo.store(false);
@@ -414,6 +493,25 @@ void DemodulatorThread::run() {
                 audioOutputQueue->push(ati);
             } else {
                 ati->setRefCount(0);
+            }
+        }
+
+        bool wantRecording = isRecording();
+        bool isRecording = wavOut != nullptr;
+        if(isRecording)
+        {
+            wavOut->newData(ati->data);
+        }
+
+        if(wantRecording != isRecording)
+        {
+            if(wantRecording)
+            {
+                wavOut = std::unique_ptr<wavFileWriter>(new wavFileWriter(audioSampleRate, ati->channels));
+            }
+            else
+            {
+                wavOut = nullptr;
             }
         }
 

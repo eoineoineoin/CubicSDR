@@ -85,4 +85,6 @@ protected:
     DemodulatorThreadOutputQueue* audioVisOutputQueue;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
     DemodulatorThreadCommandQueue* threadQueueNotify;
+
+    std::unique_ptr<struct wavFileWriter> wavOut;
 };
